@@ -1,0 +1,14 @@
+Dockerfile
+
+*~
+*.bak
+.DS_Store
+*.idea
+
+/dist
+
+/PubSubGo
+/PubSubGo
+
+/cmd/PubSubGo/pubsub
+/cmd/PubSubGo/main.go

@@ -1,0 +1,21 @@
+version: "3.3"
+
+services:
+  msgbus:
+    image: zacksfF/PubSubGo
+    networks:
+      - lb_traefik
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.port=8000"
+        - "traefik.backend=PubSubGo"
+        - "docker.network=traefik"
+        - "traefik.frontend.rule=Host:PubSubGo.shortcircuit.net.au"
+      restart_policy:
+        condition: on-failure
+      replicas: 1
+
+networks:
+  lb_traefik:
+    external: true
