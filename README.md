@@ -26,7 +26,9 @@ A lightweight, in-memory message bus library written in Golang that facilitates 
 ## Install
 
 ```#!bash
-$ go install git.mills.io/prologic/msgbus/...
+$ git clone https://github.com/zacksfF/PubSubGo.git
+cd PubSubGo
+make test
 ```
 
 ## Use Cases
