@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pubsubgo
+  namespace: pubsubgo
+  labels:
+    app: pubsubgo
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+    - port: 9091
+      targetPort: 9091
+      name: metrics
+  selector:
+    app: pubsubgo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsubgo
+  namespace: pubsubgo
+  labels:
+    app: pubsubgo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pubsubgo
+  template:
+    metadata:
+      labels:
+        app: pubsubgo
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: pubsubgo
+          image: pubsubgo:latest
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 9091
+              name: metrics
+          env:
+            - name: PUBSUB_REDIS_HOST
+              value: "redis"
+            - name: PUBSUB_METRICS_ENABLED
+              value: "true"
+            - name: PUBSUB_TRACING_ENABLED
+              value: "true"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: pubsubgo-config

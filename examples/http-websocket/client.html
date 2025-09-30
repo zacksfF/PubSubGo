@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PubSubGo - Real-time Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+        }
+        
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .messages {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            padding: 10px;
+            background: #f9fafb;
+        }
+        
+        .message {
+            padding: 8px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .message .meta {
+            font-size: 0.8em;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        
+        .message .payload {
+            color: #111827;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .stat .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat .label {
+            font-size: 0.9em;
+            color: #6b7280;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .controls button {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 PubSubGo Real-time Dashboard</h1>
+        
+        <div class="dashboard">
+            <!-- Connection Status -->
+            <div class="card">
+                <h2>Connection Status</h2>
+                <div>
+                    <p>WebSocket: <span id="wsStatus" class="status disconnected">Disconnected</span></p>
+                    <p style="margin-top: 10px;">HTTP API: <span id="httpStatus" class="status disconnected">Not Checked</span></p>
+                </div>
+                <div class="controls">
+                    <button id="connectBtn">Connect WebSocket</button>
+                    <button id="checkHealthBtn">Check Health</button>
+                </div>
+            </div>
+            
+            <!-- Publish Message -->
+            <div class="card">
+                <h2>Publish Message</h2>
+                <div class="form-group">
+                    <label>Topic</label>
+                    <select id="publishTopic">
+                        <option value="events">events</option>
+                        <option value="notifications">notifications</option>
+                        <option value="logs">logs</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea id="messagePayload" rows="3" placeholder="Enter your message..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Method</label>
+                    <select id="publishMethod">
+                        <option value="websocket">WebSocket</option>
+                        <option value="http">HTTP API</option>
+                    </select>
+                </div>
+                <button id="publishBtn">Publish Message</button>
+            </div>
+            
+            <!-- Subscribe to Topic -->
+            <div class="card">
+                <h2>Subscribe to Topic</h2>
+                <div class="form-group">
+                    <label>Topic</label>
+                    <select id="subscribeTopic">
+                        <option value="events">events</option>
+                        <option value="notifications">notifications</option>
+                        <option value="logs">logs</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Consumer ID</label>
+                    <input type="text" id="consumerId" value="web-dashboard" />
+                </div>
+                <button id="subscribeBtn">Subscribe</button>
+                <button id="unsubscribeBtn" style="background: #ef4444;">Unsubscribe</button>
+            </div>
+            
+            <!-- Received Messages -->
+            <div class="card">
+                <h2>Received Messages</h2>
+                <div class="messages" id="messageList">
+                    <p style="color: #9ca3af;">No messages received yet...</p>
+                </div>
+                <button id="clearMessagesBtn" style="margin-top: 10px;">Clear Messages</button>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="card">
+                <h2>Statistics</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="value" id="messagesSent">0</div>
+                        <div class="label">Messages Sent</div>
+                    </div>
+                    <div class="stat">
+                        <div class="value" id="messagesReceived">0</div>
+                        <div class="label">Messages Received</div>
+                    </div>
+                    <div class="stat">
+                        <div class="value" id="activeTopics">0</div>
+                        <div class="label">Active Topics</div>
+                    </div>
+                    <div class="stat">
+                        <div class="value" id="uptime">0s</div>
+                        <div class="label">Uptime</div>
+                    </div>
+                </div>
+                <button id="refreshStatsBtn" style="margin-top: 10px;">Refresh Stats</button>
+            </div>
+            
+            <!-- cURL Examples -->
+            <div class="card">
+                <h2>cURL Examples</h2>
+                <div style="background: #1f2937; color: #f3f4f6; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; overflow-x: auto;">
+                    <p># Health Check</p>
+                    <p style="color: #10b981;">curl http://localhost:8081/health</p>
+                    <br>
+                    <p># Publish Message</p>
+                    <p style="color: #10b981;">curl -X POST http://localhost:8081/api/v1/topics/events/messages \</p>
+                    <p>  -H "Content-Type: application/json" \</p>
+                    <p>  -d '{"payload":"Hello from cURL"}'</p>
+                    <br>
+                    <p># Subscribe (Long Polling)</p>
+                    <p style="color: #10b981;">curl http://localhost:8081/api/v1/topics/events/messages?consumer=curl</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const WS_URL = 'ws://localhost:8081/ws';
+        const HTTP_URL = 'http://localhost:8081';
+        
+        // State
+        let ws = null;
+        let stats = {
+            sent: 0,
+            received: 0,
+            topics: new Set(),
+            startTime: Date.now()
+        };
+        
+        // DOM Elements
+        const wsStatus = document.getElementById('wsStatus');
+        const httpStatus = document.getElementById('httpStatus');
+        const connectBtn = document.getElementById('connectBtn');
+        const checkHealthBtn = document.getElementById('checkHealthBtn');
+        const publishBtn = document.getElementById('publishBtn');
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        const unsubscribeBtn = document.getElementById('unsubscribeBtn');
+        const clearMessagesBtn = document.getElementById('clearMessagesBtn');
+        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
+        const messageList = document.getElementById('messageList');
+        
+        // WebSocket Connection
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+                return;
+            }
+            
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                wsStatus.textContent = 'Connected';
+                wsStatus.className = 'status connected';
+                connectBtn.textContent = 'Disconnect';
+                console.log('WebSocket connected');
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                displayMessage(message);
+                stats.received++;
+                updateStats();
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+            
+            ws.onclose = () => {
+                wsStatus.textContent = 'Disconnected';
+                wsStatus.className = 'status disconnected';
+                connectBtn.textContent = 'Connect WebSocket';
+                console.log('WebSocket disconnected');
+            };
+        }
+        
+        // Check HTTP Health
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${HTTP_URL}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    httpStatus.textContent = 'Healthy';
+                    httpStatus.className = 'status connected';
+                } else {
+                    httpStatus.textContent = 'Unhealthy';
+                    httpStatus.className = 'status disconnected';
+                }
+                
+                console.log('Health check:', data);
+            } catch (error) {
+                httpStatus.textContent = 'Error';
+                httpStatus.className = 'status disconnected';
+                console.error('Health check failed:', error);
+            }
+        }
+        
+        // Publish Message
+        async function publishMessage() {
+            const topic = document.getElementById('publishTopic').value;
+            const payload = document.getElementById('messagePayload').value;
+            const method = document.getElementById('publishMethod').value;
+            
+            if (!payload) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            stats.topics.add(topic);
+            
+            if (method === 'websocket' && ws && ws.readyState === WebSocket.OPEN) {
+                // WebSocket publish
+                ws.send(JSON.stringify({
+                    action: 'publish',
+                    topic: topic,
+                    payload: payload,
+                    headers: {
+                        source: 'web-dashboard',
+                        timestamp: new Date().toISOString()
+                    }
+                }));
+                stats.sent++;
+                updateStats();
+                document.getElementById('messagePayload').value = '';
+            } else {
+                // HTTP publish
+                try {
+                    const response = await fetch(`${HTTP_URL}/api/v1/topics/${topic}/messages`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            payload: payload,
+                            headers: {
+                                source: 'web-dashboard',
+                                method: 'http'
+                            }
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    console.log('Published via HTTP:', result);
+                    stats.sent++;
+                    updateStats();
+                    document.getElementById('messagePayload').value = '';
+                } catch (error) {
+                    console.error('HTTP publish failed:', error);
+                    alert('Failed to publish message via HTTP');
+                }
+            }
+        }
+        
+        // Subscribe to Topic
+        function subscribe() {
+            const topic = document.getElementById('subscribeTopic').value;
+            const consumerId = document.getElementById('consumerId').value;
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: 'subscribe',
+                    topic: topic,
+                    consumer_id: consumerId,
+                    consumer_group: 'web-dashboard'
+                }));
+                stats.topics.add(topic);
+                updateStats();
+                console.log(`Subscribed to ${topic}`);
+            } else {
+                alert('WebSocket not connected');
+            }
+        }
+        
+        // Unsubscribe from Topic
+        function unsubscribe() {
+            const topic = document.getElementById('subscribeTopic').value;
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: 'unsubscribe',
+                    topic: topic
+                }));
+                console.log(`Unsubscribed from ${topic}`);
+            } else {
+                alert('WebSocket not connected');
+            }
+        }
+        
+        // Display Message
+        function displayMessage(message) {
+            if (messageList.querySelector('p')?.textContent === 'No messages received yet...') {
+                messageList.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.textContent = `Topic: ${message.topic || 'unknown'} | ID: ${message.id || 'N/A'} | ${new Date().toLocaleTimeString()}`;
+            
+            const payload = document.createElement('div');
+            payload.className = 'payload';
+            payload.textContent = typeof message.payload === 'string' ? message.payload : JSON.stringify(message.payload);
+            
+            messageDiv.appendChild(meta);
+            messageDiv.appendChild(payload);
+            
+            messageList.insertBefore(messageDiv, messageList.firstChild);
+            
+            // Keep only last 50 messages
+            while (messageList.children.length > 50) {
+                messageList.removeChild(messageList.lastChild);
+            }
+        }
+        
+        // Update Statistics
+        function updateStats() {
+            document.getElementById('messagesSent').textContent = stats.sent;
+            document.getElementById('messagesReceived').textContent = stats.received;
+            document.getElementById('activeTopics').textContent = stats.topics.size;
+            
+            const uptime = Math.floor((Date.now() - stats.startTime) / 1000);
+            const hours = Math.floor(uptime / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = uptime % 60;
+            
+            let uptimeStr = '';
+            if (hours > 0) uptimeStr += `${hours}h `;
+            if (minutes > 0) uptimeStr += `${minutes}m `;
+            uptimeStr += `${seconds}s`;
+            
+            document.getElementById('uptime').textContent = uptimeStr;
+        }
+        
+        // Clear Messages
+        function clearMessages() {
+            messageList.innerHTML = '<p style="color: #9ca3af;">No messages received yet...</p>';
+        }
+        
+        // Event Listeners
+        connectBtn.addEventListener('click', connectWebSocket);
+        checkHealthBtn.addEventListener('click', checkHealth);
+        publishBtn.addEventListener('click', publishMessage);
+        subscribeBtn.addEventListener('click', subscribe);
+        unsubscribeBtn.addEventListener('click', unsubscribe);
+        clearMessagesBtn.addEventListener('click', clearMessages);
+        refreshStatsBtn.addEventListener('click', updateStats);
+        
+        // Auto-update stats
+        setInterval(updateStats, 1000);
+        
+        // Check health on load
+        checkHealth();
+    </script>
+</body>
+</html>

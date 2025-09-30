@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: 'PubSubGo Dashboards'
+    orgId: 1
+    folder: 'PubSubGo'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

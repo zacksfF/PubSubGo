@@ -1,0 +1,67 @@
+server:
+  host: 0.0.0.0
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 30s
+  idle_timeout: 120s
+  shutdown_timeout: 30s
+  max_request_size: 8388608 # 8MB
+  enable_websocket: true
+
+storage:
+  type: redis
+  max_message_size: 1048576 # 1MB
+  max_queue_size: 50000  # Higher for production
+  retention_time: 72h    # Longer retention for prod
+  cleanup_interval: 1h
+
+redis:
+  addresses:
+    - prod-redis:6379
+  password: "${REDIS_PASSWORD}"  # Use secret
+  db: 0
+  max_retries: 5
+  pool_size: 200     # Larger pool for production
+  min_idle_conns: 20
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s
+  pool_timeout: 4s
+  idle_timeout: 5m
+  idle_check_frequency: 1m
+  enable_cluster: true  # Enable cluster for production
+
+broker:
+  default_partitions: 8  # More partitions for production
+  default_replication: 3
+  max_message_batch_size: 5000  # Larger batch for production
+  batch_flush_interval: 50ms
+  compression_type: snappy
+  compression_level: 6
+  enable_deduplication: true
+  deduplication_window: 10m  # Longer window for production
+  default_ack_deadline: 30s
+  max_retries: 5
+  retry_backoff: 2s
+  enable_dlq: true
+  dlq_prefix: "dlq-"
+
+metrics:
+  enabled: true
+  port: 9091
+  path: /metrics
+  collect_interval: 10s
+  namespace: pubsubgo
+
+tracing:
+  enabled: true
+  service_name: pubsubgo-prod
+  otlp_endpoint: http://prod-otel-collector:4318/v1/traces
+  sampling_rate: 0.01  # 1% sampling for production
+
+rate_limit:
+  enabled: true
+  requests_per_second: 50000  # Higher limits for production
+  burst_size: 5000
+  per_topic: true
+  per_consumer: true

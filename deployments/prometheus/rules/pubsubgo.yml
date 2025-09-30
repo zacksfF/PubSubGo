@@ -1,0 +1,84 @@
+groups:
+  - name: pubsubgo.rules
+    rules:
+      # Message throughput rate
+      - record: pubsubgo:message_publish_rate
+        expr: rate(pubsubgo_messages_published_total[5m])
+      
+      - record: pubsubgo:message_consume_rate
+        expr: rate(pubsubgo_messages_consumed_total[5m])
+
+      # Message latency percentiles
+      - record: pubsubgo:message_latency_p95
+        expr: histogram_quantile(0.95, rate(pubsubgo_message_latency_seconds_bucket[5m]))
+      
+      - record: pubsubgo:message_latency_p99
+        expr: histogram_quantile(0.99, rate(pubsubgo_message_latency_seconds_bucket[5m]))
+
+      # Topic message counts
+      - record: pubsubgo:topic_message_count
+        expr: sum by (topic) (pubsubgo_topic_messages_total)
+
+      # Consumer group lag
+      - record: pubsubgo:consumer_group_lag
+        expr: pubsubgo_consumer_group_lag_messages
+
+      # Connection metrics
+      - record: pubsubgo:active_connections
+        expr: pubsubgo_active_connections_total
+
+      # Error rates
+      - record: pubsubgo:error_rate
+        expr: rate(pubsubgo_errors_total[5m])
+
+  - name: pubsubgo.alerts
+    rules:
+      # High error rate alert
+      - alert: PubSubGoHighErrorRate
+        expr: pubsubgo:error_rate > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PubSubGo high error rate"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # High message latency alert
+      - alert: PubSubGoHighLatency
+        expr: pubsubgo:message_latency_p95 > 1.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PubSubGo high message latency"
+          description: "95th percentile latency is {{ $value }}s"
+
+      # Consumer group lag alert
+      - alert: PubSubGoConsumerLag
+        expr: pubsubgo:consumer_group_lag > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PubSubGo consumer group lag"
+          description: "Consumer group {{ $labels.group }} has {{ $value }} messages lag"
+
+      # Service down alert
+      - alert: PubSubGoDown
+        expr: up{job="pubsubgo"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PubSubGo service is down"
+          description: "PubSubGo service has been down for more than 1 minute"
+
+      # Redis connection alert
+      - alert: RedisConnectionFailed
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis connection failed"
+          description: "Cannot connect to Redis backend"

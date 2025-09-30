@@ -1,0 +1,107 @@
+# PeerAuthentication - Enable mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: pubsubgo
+spec:
+  mtls:
+    mode: STRICT
+---
+# AuthorizationPolicy - Allow traffic between services
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: pubsubgo-authz
+  namespace: pubsubgo
+spec:
+  selector:
+    matchLabels:
+      app: pubsubgo
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+        - source:
+            namespaces: ["pubsubgo"]
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+            paths: ["/api/*", "/ws", "/health", "/metrics"]
+---
+# AuthorizationPolicy - Allow Redis access
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: redis-authz
+  namespace: pubsubgo
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/pubsubgo/sa/default"]
+      to:
+        - operation:
+            ports: ["6379"]
+---
+# AuthorizationPolicy - Allow observability stack access
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: observability-authz
+  namespace: pubsubgo
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+        - source:
+            namespaces: ["pubsubgo"]
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/api/*", "/metrics"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: grafana-authz
+  namespace: pubsubgo
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+        - source:
+            namespaces: ["pubsubgo"]
+      to:
+        - operation:
+            methods: ["GET", "POST"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: jaeger-authz
+  namespace: pubsubgo
+spec:
+  selector:
+    matchLabels:
+      app: jaeger
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+        - source:
+            namespaces: ["pubsubgo"]
+      to:
+        - operation:
+            methods: ["GET", "POST"]

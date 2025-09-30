@@ -1,0 +1,34 @@
+# Telemetry configuration for enhanced observability
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: pubsubgo
+spec:
+  metrics:
+    - providers:
+        - name: prometheus
+    - overrides:
+        - match:
+            metric: ALL_METRICS
+          tagOverrides:
+            request_protocol:
+              value: "%{REQUEST_PROTOCOL}"
+            response_code:
+              value: "%{RESPONSE_CODE}"
+            source_app:
+              value: "%{SOURCE_APP}"
+            destination_service_name:
+              value: "%{DESTINATION_SERVICE_NAME}"
+        - match:
+            metric: requests_total
+          disabled: false
+        - match:
+            metric: request_duration_milliseconds
+          disabled: false
+  tracing:
+    - providers:
+        - name: jaeger
+  accessLogging:
+    - providers:
+        - name: otel

@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  # Redis for testing
+  redis-test:
+    image: redis:7-alpine
+    container_name: pubsubgo-redis-test
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+    command: redis-server --appendonly yes --port 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  # PubSubGo server for testing
+  pubsubgo-test:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: pubsubgo-test
+    ports:
+      - "8082:8080"
+      - "9093:9091"
+    volumes:
+      - ../test/fixtures/config-test.yaml:/app/config/config.yaml:ro
+    environment:
+      - PUBSUB_REDIS_HOST=redis-test
+      - PUBSUB_SERVER_PORT=8080
+      - PUBSUB_METRICS_PORT=9091
+      - PUBSUB_METRICS_ENABLED=true
+      - PUBSUB_TRACING_ENABLED=false
+    depends_on:
+      redis-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - test-network
+
+  # Test runner container
+  test-runner:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile.test
+    container_name: pubsubgo-test-runner
+    volumes:
+      - ..:/app
+      - test_results:/test-results
+    working_dir: /app
+    environment:
+      - GO_ENV=test
+      - REDIS_HOST=redis-test:6379
+      - PUBSUB_SERVER_URL=http://pubsubgo-test:8080
+    depends_on:
+      pubsubgo-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    profiles:
+      - testing
+
+  # Load testing container
+  load-test:
+    image: loadimpact/k6:latest
+    container_name: pubsubgo-load-test
+    volumes:
+      - ../test/load:/scripts:ro
+      - test_results:/results
+    environment:
+      - PUBSUB_URL=http://pubsubgo-test:8080
+    depends_on:
+      pubsubgo-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    profiles:
+      - load-testing
+
+volumes:
+  redis_test_data:
+  test_results:
+
+networks:
+  test-network:
+    driver: bridge

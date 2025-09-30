@@ -1,0 +1,67 @@
+server:
+  host: 0.0.0.0
+  port: 8080
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 10s
+  max_request_size: 1048576 # 1MB for tests
+  enable_websocket: true
+
+storage:
+  type: redis
+  max_message_size: 1048576 # 1MB
+  max_queue_size: 1000
+  retention_time: 1h # Shorter for tests
+  cleanup_interval: 5m
+
+redis:
+  addresses:
+    - redis-test:6379
+  password: ""
+  db: 0
+  max_retries: 3
+  pool_size: 10
+  min_idle_conns: 2
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s
+  pool_timeout: 4s
+  idle_timeout: 5m
+  idle_check_frequency: 1m
+  enable_cluster: false
+
+broker:
+  default_partitions: 2
+  default_replication: 1
+  max_message_batch_size: 100
+  batch_flush_interval: 50ms
+  compression_type: none # Disable for tests
+  compression_level: 1
+  enable_deduplication: false # Disable for tests
+  deduplication_window: 1m
+  default_ack_deadline: 10s
+  max_retries: 2
+  retry_backoff: 500ms
+  enable_dlq: true
+  dlq_prefix: "test-dlq-"
+
+metrics:
+  enabled: true
+  port: 9091
+  path: /metrics
+  collect_interval: 5s
+  namespace: pubsubgo_test
+
+tracing:
+  enabled: false # Disable for unit tests
+  service_name: pubsubgo-test
+  otlp_endpoint: http://localhost:4318/v1/traces
+  sampling_rate: 1.0 # 100% for tests
+
+rate_limit:
+  enabled: false # Disable for tests
+  requests_per_second: 1000
+  burst_size: 100
+  per_topic: false
+  per_consumer: false

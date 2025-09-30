@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pubsubgo
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - redis.yaml
+  - pubsubgo.yaml
+  - observability.yaml
+  - ingress.yaml
+
+configMapGenerator:
+  - name: prometheus-config
+    files:
+      - ../../prometheus/prometheus.yml
+  - name: otel-collector-config
+    files:
+      - ../../otel/otel-collector.yml
+
+commonLabels:
+  app.kubernetes.io/name: pubsubgo
+  app.kubernetes.io/version: "1.0.0"
+
+images:
+  - name: pubsubgo
+    newTag: latest

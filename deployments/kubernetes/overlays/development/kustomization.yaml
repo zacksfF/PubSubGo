@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pubsubgo-dev
+
+namePrefix: dev-
+
+resources:
+  - ../../base
+
+patchesStrategicMerge:
+  - deployment-patch.yaml
+
+replicas:
+  - name: pubsubgo
+    count: 1
+  - name: redis
+    count: 1
+
+images:
+  - name: pubsubgo
+    newTag: dev
+
+configMapGenerator:
+  - name: pubsubgo-config
+    behavior: replace
+    files:
+      - config.yaml

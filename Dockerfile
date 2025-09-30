@@ -1,66 +1,68 @@
-# Build
-FROM golang:alpine AS build
+# Build stage
+FROM golang:1.21-alpine AS builder
 
-RUN apk add --no-cache -U build-base git make
+# Install build dependencies
+RUN apk add --no-cache git make build-base ca-certificates
 
-RUN mkdir -p /src
+WORKDIR /app
 
-WORKDIR /src
+# Copy go mod files first for better layer caching
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Copy Makefile
-COPY Makefile ./
+# Copy source code
+COPY . .
 
-# Install deps
-RUN make deps
-
-# Copy go.mod and go.sum and install and cache dependencies
-COPY go.mod .
-COPY go.sum .
-
-# Copy sources
-COPY *.go ./
-COPY ./client/*.go ./client/
-COPY ./cmd/msgbusd/*.go ./cmd/pubsub/
-COPY ./cmd/msgbus/*.go ./cmd/main.go
-
-# Version/Commit (there there is no .git in Docker build context)
-# NOTE: This is fairly low down in the Dockerfile instructions so
-#       we don't break the Docker build cache just be changing
-#       unrelated files that actually haven't changed but caused the
-#       COMMIT value to change.
-ARG VERSION="0.0.0"
+# Build arguments for version information
+ARG VERSION="1.0.0"
 ARG COMMIT="HEAD"
+ARG BUILD_TIME=""
 
-# Build client binary
-RUN make cli VERSION=$VERSION COMMIT=$COMMIT
+# Build the server binary
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-w -s -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildTime=${BUILD_TIME}" \
+    -a -installsuffix cgo \
+    -o pubsubgo-server ./cmd/server
 
-# Build server binary
-RUN make server VERSION=$VERSION COMMIT=$COMMIT
+# Build the CLI binary
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-w -s -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildTime=${BUILD_TIME}" \
+    -a -installsuffix cgo \
+    -o pubsub-cli ./cmd/cli
 
-# Runtime
+# Final runtime stage
 FROM alpine:latest
 
-RUN apk --no-cache -U add su-exec shadow ca-certificates tzdata
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates tzdata curl
 
-ENV PUID=1000
-ENV PGID=1000
+# Create non-root user
+RUN addgroup -g 1000 pubsub && \
+    adduser -D -u 1000 -G pubsub pubsub
 
-RUN addgroup -g "${PGID}" PubSubGo && \
-    adduser -D -H -G PubSubGo -h /var/empty -u "${PUID}" PubSubGo && \
-    mkdir -p /data && chown -R PubSubGo:PubSubGo /data
+# Create necessary directories
+RUN mkdir -p /app/data /app/config /app/logs && \
+    chown -R pubsub:pubsub /app
 
+WORKDIR /app
 
-VOLUME /data
+# Copy binaries from builder
+COPY --from=builder /app/pubsubgo-server /usr/local/bin/pubsubgo-server
+COPY --from=builder /app/pubsub-cli /usr/local/bin/pubsub-cli
 
-WORKDIR /
-    
-# force cgo resolver
-ENV GODEBUG=netdns=cgo
+# Copy configuration
+COPY config.yaml /app/config/config.yaml
 
-COPY --from=build /src/PubSubGo /usr/local/bin/PubSubGo
-COPY --from=build /src/PubSubGo /usr/local/bin/PubSubGo
+# Switch to non-root user
+USER pubsub
 
-COPY .dockerfiles/entrypoint.sh /init
+# Expose ports
+EXPOSE 8080 9091
 
-ENTRYPOINT ["/init"]
-CMD ["PubSubGo"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Default command
+ENTRYPOINT ["pubsubgo-server"]
+CMD ["-config", "/app/config/config.yaml"]
