@@ -80,7 +80,7 @@ type OrderEvent struct {
 }
 
 func main() {
-	log.Println("🚀 Starting E-Commerce Order Processing System (HTTP Client)")
+	log.Println(" Starting E-Commerce Order Processing System (HTTP Client)")
 	log.Println("=" + string(make([]byte, 60)))
 
 	// Initialize PubSubGo HTTP client
@@ -92,7 +92,7 @@ func main() {
 	// Simulate order flow
 	simulateOrderFlow(client)
 
-	log.Println("\n🎉 E-Commerce order processing demo completed!")
+	log.Println("\n E-Commerce order processing demo completed!")
 	log.Println("Check your PubSubGo monitoring dashboard for metrics.")
 }
 
@@ -107,19 +107,19 @@ func createTopics(client *PubSubClient) {
 		{"inventory", 2},
 	}
 
-	log.Println("\n📦 Creating Topics...")
+	log.Println("\n Creating Topics...")
 	for _, topic := range topics {
 		err := client.CreateTopic(topic.name, topic.partitions)
 		if err != nil {
 			log.Printf("Topic %s might already exist: %v", topic.name, err)
 		} else {
-			log.Printf("✅ Created topic: %s with %d partitions", topic.name, topic.partitions)
+			log.Printf(" Created topic: %s with %d partitions", topic.name, topic.partitions)
 		}
 	}
 }
 
 func simulateOrderFlow(client *PubSubClient) {
-	log.Println("\n📦 Starting Order Simulation...")
+	log.Println("\n Starting Order Simulation...")
 	
 	// Simulate 10 orders
 	for i := 1; i <= 10; i++ {
@@ -140,9 +140,9 @@ func simulateOrderFlow(client *PubSubClient) {
 
 		err := client.PublishMessage("orders", order, headers)
 		if err != nil {
-			log.Printf("❌ Failed to publish order %s: %v", order.OrderID, err)
+			log.Printf(" Failed to publish order %s: %v", order.OrderID, err)
 		} else {
-			log.Printf("📤 Published order %s (Amount: $%.2f)", order.OrderID, order.Amount)
+			log.Printf(" Published order %s (Amount: $%.2f)", order.OrderID, order.Amount)
 		}
 
 		// Simulate payment processing
@@ -159,9 +159,9 @@ func simulateOrderFlow(client *PubSubClient) {
 			})
 
 			if err != nil {
-				log.Printf("❌ Failed to publish payment for %s: %v", order.OrderID, err)
+				log.Printf(" Failed to publish payment for %s: %v", order.OrderID, err)
 			} else {
-				log.Printf("💳 Published payment request for order %s", order.OrderID)
+				log.Printf(" Published payment request for order %s", order.OrderID)
 			}
 		}
 
@@ -178,7 +178,7 @@ func simulateOrderFlow(client *PubSubClient) {
 		})
 
 		if err != nil {
-			log.Printf("❌ Failed to publish inventory check for %s: %v", order.OrderID, err)
+			log.Printf(" Failed to publish inventory check for %s: %v", order.OrderID, err)
 		}
 
 		// Simulate notification
@@ -194,9 +194,9 @@ func simulateOrderFlow(client *PubSubClient) {
 		})
 
 		if err != nil {
-			log.Printf("❌ Failed to send notification for %s: %v", order.OrderID, err)
+			log.Printf(" Failed to send notification for %s: %v", order.OrderID, err)
 		} else {
-			log.Printf("📧 Sent notification for order %s", order.OrderID)
+			log.Printf(" Sent notification for order %s", order.OrderID)
 		}
 
 		time.Sleep(1 * time.Second)
