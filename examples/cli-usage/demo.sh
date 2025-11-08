@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 PubSubGo CLI Demo - Real-time Chat Application"
+echo " PubSubGo CLI Demo - Real-time Chat Application"
 echo "=================================================="
 echo ""
 
@@ -56,7 +56,7 @@ run_cmd "$CLI topics list --output table"
 print_section "4. PUBLISH MESSAGES"
 
 echo "Publishing welcome message..."
-run_cmd "$CLI publish --topic general-chat --message 'Welcome to PubSubGo Chat! 👋' --header sender=system --header priority=high"
+run_cmd "$CLI publish --topic general-chat --message 'Welcome to PubSubGo Chat! ' --header sender=system --header priority=high"
 
 echo "Publishing tech discussion..."
 run_cmd "$CLI publish --topic tech-chat --message 'Has anyone tried the new Go 1.21 features?' --header sender=alice --header timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -189,7 +189,7 @@ else
     echo "Topics retained for further testing."
 fi
 
-print_section "✅ DEMO COMPLETE!"
+print_section " DEMO COMPLETE!"
 
 echo "Key Features Demonstrated:"
 echo "  • Topic management (create, list, describe, delete)"
