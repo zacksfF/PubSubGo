@@ -142,7 +142,7 @@ func publishMessage(serverURL string, req PublishRequest, verbose bool) error {
 	}
 
 	// Display result
-	fmt.Printf("✅ Message published successfully!\n")
+	fmt.Printf(" Message published successfully!\n")
 	fmt.Printf("Message ID: %s\n", publishResp.MessageID)
 	fmt.Printf("Topic: %s\n", publishResp.Topic)
 	fmt.Printf("Partition: %d\n", publishResp.Partition)
