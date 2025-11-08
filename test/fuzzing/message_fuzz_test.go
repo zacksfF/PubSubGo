@@ -47,7 +47,7 @@ func FuzzBase64Payload(f *testing.F) {
 	f.Add([]byte("Hello, World!"))
 	f.Add([]byte(""))
 	f.Add([]byte("\x00\x01\x02\x03"))
-	f.Add([]byte("🚀 Unicode test"))
+	f.Add([]byte(" Unicode test"))
 	f.Add(make([]byte, 1024)) // Large payload
 	
 	f.Fuzz(func(t *testing.T, data []byte) {
@@ -97,7 +97,7 @@ func FuzzTopicName(f *testing.F) {
 	f.Add("123-numeric-start")
 	f.Add("")
 	f.Add("../../etc/passwd")
-	f.Add("topic-with-émojis-🚀")
+	f.Add("topic-with-émojis-")
 	f.Add(string(make([]byte, 256))) // Long name
 	
 	f.Fuzz(func(t *testing.T, topicName string) {
