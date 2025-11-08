@@ -148,7 +148,7 @@ func subscribeToTopic(serverURL, topic, consumerGroup, filter string, noAck, ver
 
 	go func() {
 		<-sigChan
-		fmt.Printf("\n🛑 Shutting down...\n")
+		fmt.Printf("\n Shutting down...\n")
 		cancel()
 	}()
 
@@ -177,12 +177,12 @@ func subscribeToTopic(serverURL, topic, consumerGroup, filter string, noAck, ver
 					log.Printf("Error handling message: %v", err)
 				}
 			case "subscribed":
-				fmt.Printf("✅ Subscription confirmed\n")
+				fmt.Printf(" Subscription confirmed\n")
 			case "error":
-				fmt.Printf("❌ Error: %s\n", msg.Error)
+				fmt.Printf(" Error: %s\n", msg.Error)
 			case "pong":
 				if verbose {
-					fmt.Printf("🏓 Received pong\n")
+					fmt.Printf(" Received pong\n")
 				}
 			default:
 				if verbose {
@@ -200,7 +200,7 @@ func handleMessage(conn *websocket.Conn, msg SubscribeMessage, noAck, verbose bo
 	}
 
 	// Display message
-	fmt.Printf("📨 [%s] Message received:\n", time.Now().Format("15:04:05"))
+	fmt.Printf(" [%s] Message received:\n", time.Now().Format("15:04:05"))
 	fmt.Printf("   ID: %s\n", payload.ID)
 	fmt.Printf("   Topic: %s\n", payload.Topic)
 	if payload.Key != "" {
@@ -232,7 +232,7 @@ func handleMessage(conn *websocket.Conn, msg SubscribeMessage, noAck, verbose bo
 		}
 
 		if verbose {
-			fmt.Printf("✅ Sent acknowledgment for message %s\n", payload.ID)
+			fmt.Printf(" Sent acknowledgment for message %s\n", payload.ID)
 		}
 	}
 
