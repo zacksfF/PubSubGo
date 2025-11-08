@@ -190,13 +190,13 @@ func listTopics(serverURL string, verbose bool) error {
 	}
 
 	if len(topics) == 0 {
-		fmt.Printf("📭 No topics found\n")
+		fmt.Printf(" No topics found\n")
 		return nil
 	}
 
-	fmt.Printf("📋 Found %d topic(s):\n\n", len(topics))
+	fmt.Printf(" Found %d topic(s):\n\n", len(topics))
 	for _, topic := range topics {
-		fmt.Printf("📁 %s\n", topic.Name)
+		fmt.Printf(" %s\n", topic.Name)
 		fmt.Printf("   Partitions: %d\n", topic.Partitions)
 		fmt.Printf("   Messages: %d\n", topic.MessageCount)
 		fmt.Printf("   Retention: %s\n", topic.RetentionTime)
@@ -239,7 +239,7 @@ func createTopic(serverURL string, req CreateTopicRequest, verbose bool) error {
 		return fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Printf("✅ Topic '%s' created successfully!\n", req.Name)
+	fmt.Printf(" Topic '%s' created successfully!\n", req.Name)
 	fmt.Printf("   Partitions: %d\n", req.Partitions)
 	if req.RetentionTime != "" {
 		fmt.Printf("   Retention: %s\n", req.RetentionTime)
@@ -280,7 +280,7 @@ func deleteTopic(serverURL, topicName string, verbose bool) error {
 		return fmt.Errorf("server error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Printf("✅ Topic '%s' deleted successfully!\n", topicName)
+	fmt.Printf(" Topic '%s' deleted successfully!\n", topicName)
 
 	return nil
 }
@@ -316,7 +316,7 @@ func getTopicStats(serverURL, topicName string, verbose bool) error {
 		return fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	fmt.Printf("📊 Statistics for topic '%s':\n\n", topicName)
+	fmt.Printf(" Statistics for topic '%s':\n\n", topicName)
 	fmt.Printf("   Partitions: %d\n", stats.Partitions)
 	fmt.Printf("   Messages: %d\n", stats.Messages)
 	fmt.Printf("   Consumers: %d\n", stats.Consumers)
