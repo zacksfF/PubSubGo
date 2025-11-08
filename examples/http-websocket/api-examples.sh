@@ -7,7 +7,7 @@ set -e
 
 API_URL="http://localhost:8081"
 
-echo "🌐 PubSubGo HTTP/WebSocket/cURL Examples"
+echo " PubSubGo HTTP/WebSocket/cURL Examples"
 echo "========================================="
 echo ""
 
@@ -320,7 +320,7 @@ echo "(Install GNU parallel for parallel testing: brew install parallel)"
 
 echo -e "\n"
 
-print_header "✅ EXAMPLES COMPLETE!"
+print_header " EXAMPLES COMPLETE!"
 
 echo "Summary of demonstrated features:"
 echo "  • Health check and monitoring"
